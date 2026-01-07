@@ -1,3 +1,54 @@
+# wordle
+
+import sys
+import random
+from PyQt5.QtWidgets import QWidget, QApplication, QLineEdit, QMessageBox, QGridLayout
+from PyQt5.QtCore import Qt, QEvent
+
+word_list = ["apple",
+    "grape",
+    "peach",
+    "berry",
+    "lemon",
+    "mango",
+    "melon",
+    "cherry",
+    "olive",
+    "guava",
+
+    "house",
+    "table",
+    "chair",
+    "plant",
+    "clock",
+    "phone",
+    "glass",
+    "paper",
+    "bread",
+    "spoon",
+
+    "water",
+    "river",
+    "ocean",
+    "cloud",
+    "storm",
+    "earth",
+    "stone",
+    "flame",
+    "windy",
+    "sunny",
+
+    "smile",
+    "laugh",
+    "dream",
+    "think",
+    "learn",
+    "study",
+    "teach",
+    "build",
+    "write",
+    "solve"]
+
 max_rows = 5  # number of attempts the player has
 
 
