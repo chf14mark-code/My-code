@@ -1,0 +1,163 @@
+import sys
+
+import requests
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout
+from PyQt5.QtCore import Qt
+
+class weatherApp(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.input_city = QLineEdit(self)
+        self.input_city.setPlaceholderText("Enter city name")
+        self.enter_button = QPushButton("Enter",self)
+        self.temp_label = QLabel(self)
+        self.temp_icon = QLabel(self)
+        self.temp_description = QLabel(self)
+
+        self.initGUI()
+
+    def initGUI(self):
+        self.setWindowTitle("Weather App")
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.input_city)
+        vbox.addWidget(self.enter_button)
+        vbox.addWidget(self.temp_label)
+        vbox.addWidget(self.temp_icon)
+        vbox.addWidget(self.temp_description)
+        self.setLayout(vbox)
+
+        self.input_city.setAlignment(Qt.AlignCenter)
+        self.temp_label.setAlignment(Qt.AlignCenter)
+        self.temp_icon.setAlignment(Qt.AlignCenter)
+        self.temp_description.setAlignment(Qt.AlignCenter)
+
+
+        self.input_city.setObjectName("input_city")
+        self.enter_button.setObjectName("enter_button")
+        self.temp_label.setObjectName("temp_label")
+        self.temp_icon.setObjectName("temp_icon")
+        self.temp_description.setObjectName("temp_description")
+
+        # css
+
+        self.setStyleSheet("""
+        QLabel#temp_label {
+        font-size: 75px;
+        font-family: calibri;
+        }
+        QLabel#temp_icon{
+        font-size: 100px;
+        font-family: Segoe UI emoji;}
+        
+        QLabel#temp_description{
+        font-size: 75px;
+        font-family: calibri;}
+        
+        QLineEdit#input_city {
+        font-size: 60px;
+        font-family: calibri;
+        border: 5px solid black;
+        border-radius: 10px;}
+        
+        QPushButton#enter_button{
+        font-size: 60px;
+        font-family: calibri;
+        }""")
+
+        self.enter_button.clicked.connect(self.check_input)
+
+    def check_input(self):
+        city_name = self.input_city.text()
+        API_KEY = "90351a7952679c9ac6a86276f34879e6"
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={API_KEY}"
+
+        try:
+            response = requests.get(url)
+            data = response.json()
+            response.raise_for_status()
+            if data["cod"] == 200:
+                self.display_weather(data)
+        except requests.exceptions.HTTPError:
+            match response.status_code:
+                case 400:
+                    self.display_error("Bad Request \nPlease try again later")
+                case 401:
+                    self.display_error("Unauthorized \nAPI KEY is not active")
+                case 403:
+                    self.display_error("Forbidden \nAccess Denied")
+                case 404:
+                    self.display_error("Not Found \nPlease check your city name")
+                case 500:
+                    self.display_error("Internal Server Error \nPlease try again later")
+                case 501:
+                    self.display_error("Not implemented \nPlease try another name")
+                case 502:
+                    self.display_error("Bad gateway \nPlease try again later")
+                case 503:
+                    self.display_error("Service Unavailable \nPlease try again later")
+                case _:
+                    self.display_error("Server Error \nPlease try again later")
+        except requests.exceptions.ConnectionError:
+            self.display_error("Connection Error \n Please try again later")
+        except requests.exceptions.Timeout:
+            self.display_error("Timeout \n Please try again later")
+        except requests.exceptions.RequestException as requests_exception:
+            self.display_error(f"Error occured: {requests_exception}")
+
+
+
+    def display_error(self, error):
+        self.temp_label.setStyleSheet("font-size: 35px;")
+        self.temp_label.setText(error)
+        self.temp_description.clear()
+        self.temp_icon.clear()
+
+    def display_weather(self,data):
+        self.temp_label.setStyleSheet("font-size: 75px;")
+        temperature = data["main"]["temp"] - 273.15
+        weather_description = data["weather"][0]["description"]
+        id = data["weather"][0]["id"]
+        self.temp_description.setText(weather_description)
+        self.temp_label.setText(f"{temperature:.0f}°C")
+
+        self.temp_icon.setText(self.weather_icon(id))
+
+    @staticmethod
+    def weather_icon(id):
+        if id >= 200 and id <= 232:
+            return "⛈️"
+        elif id >= 300 and id <= 321:
+            return "🌦️"
+        elif id >= 500 and id <= 504:
+            return "🌧️"
+        elif id == 511:
+            return "🌨️"
+        elif id >= 521 and id <= 531:
+            return "🌦️"
+        elif id >= 600 and id <= 622:
+            return "🌨️"
+        elif id == 701 or id == 721:
+            return "🌫️"
+        elif id == 711:
+            return "💨"
+        elif id == 731 or id == 761:
+            return "🌫️"
+        elif id == 741:
+            return "🌁"
+        elif id == 762:
+            return "🌋"
+        elif id == 771:
+            return "🌧️"
+        elif id == 781:
+            return "🌪️"
+        elif id == 800:
+            return "☀️"
+        else:
+            return "☁️"
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    weather_app = weatherApp()
+    weather_app.show()
+    sys.exit(app.exec_())
