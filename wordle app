@@ -2,52 +2,22 @@
 
 import sys
 import random
-from PyQt5.QtWidgets import QWidget, QApplication, QLineEdit, QMessageBox, QGridLayout
+
+from PyQt5.QtWidgets import QWidget, QApplication, QLineEdit, QMessageBox,QGridLayout
 from PyQt5.QtCore import Qt, QEvent
 
-word_list = ["apple",
-    "grape",
-    "peach",
-    "berry",
-    "lemon",
-    "mango",
-    "melon",
-    "cherry",
-    "olive",
-    "guava",
 
-    "house",
-    "table",
-    "chair",
-    "plant",
-    "clock",
-    "phone",
-    "glass",
-    "paper",
-    "bread",
-    "spoon",
+def import_words():
+    try:
+        with open("dictionary.txt", "r") as file:
+            words = file.read().splitlines()
+            return words
+    except FileNotFoundError:
+        print("Dictionary file not found. Creating new one.")
 
-    "water",
-    "river",
-    "ocean",
-    "cloud",
-    "storm",
-    "earth",
-    "stone",
-    "flame",
-    "windy",
-    "sunny",
+word_list = import_words()
 
-    "smile",
-    "laugh",
-    "dream",
-    "think",
-    "learn",
-    "study",
-    "teach",
-    "build",
-    "write",
-    "solve"]
+
 
 max_rows = 5  # number of attempts the player has
 
@@ -56,10 +26,11 @@ class wordle_app(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.answer = random.choice(word_list)  # randomly choose a word from word_list
+        self.answer = random.choice(word_list).lower()  # randomly choose a word from word_list
         self.grid = []  # store the grid of input boxes
         self.length = len(self.answer)
         self.current_row = 0  # track the current attempt
+        self.current_column = 0
         self.init_UI()  # call the init_UI method
 
     def init_UI(self):
@@ -106,39 +77,47 @@ class wordle_app(QWidget):
         if len(self.grid[r][c].text()) == 1:
             if c + 1 < self.length:
                 self.grid[r][c + 1].setFocus()  # move focus to the next box
+                if self.current_column + 1 < self.length:
+                    self.current_column += 1
 
     def eventFilter(self, obj, event):
         if event.type() == event.KeyPress:  # check if a key is pressed
             if event.key() in (Qt.Key_Enter, Qt.Key_Return):  # detect Enter or Return key
                 self.submit_row()  # submit the current row
                 return True
+            elif event.key() == Qt.Key_Backspace and len(self.grid[self.current_row][self.current_column].text()) == 0:
+                self.backspace()
+                return True
         return super().eventFilter(obj, event)  # use the default event filter otherwise
 
     def answer_list(self):
         return list(self.answer)  # convert the answer word into a list of characters
 
+    def backspace(self):
+        if self.current_column - 1 >= 0:
+            self.grid[self.current_row][self.current_column - 1].setFocus()
+            self.grid[self.current_row][self.current_column - 1].setText("")
+            self.current_column = self.current_column - 1
+
     def submit_row(self):
         # join all characters in the current row into a single word
-        user_answer = "".join(box.text() for box in self.grid[self.current_row])
+        user_answer = "".join(box.text() for box in self.grid[self.current_row]).lower()
 
         char_answer = self.answer_list()
+
+        if user_answer not in word_list:
+            return True
 
         if len(user_answer) < self.length:
             return  # stop if not all boxes are filled
 
-        # first loop: check correct letters in the correct positions
+        # checking the letter in each box
         for i, box in enumerate(self.grid[self.current_row]):
-            if user_answer[i] == self.answer[i]:
-                box.setStyleSheet(self.green())
-                char_answer[i] = None
-
-        # second loop: check correct letters in the wrong positions
-        for i, box in enumerate(self.grid[self.current_row]):
-            if char_answer[i] is None:
-                continue
             if user_answer[i] in char_answer:
-                box.setStyleSheet(self.yellow())
-                char_answer[char_answer.index(user_answer[i])] = None
+                if user_answer[i] == char_answer[i]:
+                    box.setStyleSheet(self.green())
+                else:
+                    box.setStyleSheet(self.yellow())
             else:
                 box.setStyleSheet(self.gray())
 
@@ -149,24 +128,30 @@ class wordle_app(QWidget):
             )
             self.close()
 
+        # display a losing message if the player runs out of attempts
+        if self.current_row > max_rows:
+            QMessageBox.critical(self, "YOU LOSE", "TRY AGAIN!")
+            self.close()
+
         # make the previous row uneditable
         for box in self.grid[self.current_row]:
             box.setReadOnly(True)
 
-        # allow editing for the next row
-        for box in self.grid[self.current_row + 1]:
-            box.setReadOnly(False)
+        if self.current_row + 1 < max_rows:
+            # allow editing for the next row
+            for box in self.grid[self.current_row + 1]:
+                box.setReadOnly(False)
 
-        # move focus to the first box of the next row
-        self.grid[self.current_row + 1][0].setFocus()
+            # move focus to the first box of the next row
+            self.grid[self.current_row + 1][0].setFocus()
 
         self.current_row += 1
+        self.current_column = 0
 
         # display a losing message if the player runs out of attempts
         if self.current_row == max_rows:
-            QMessageBox.critical(self, "YOU LOSE", "TRY AGAIN!")
+            QMessageBox.critical(self, "YOU LOSE", f"TRY AGAIN! ({self.answer})")
             self.close()
-
 
 # check if this file is being run as the main program
 if __name__ == '__main__':
