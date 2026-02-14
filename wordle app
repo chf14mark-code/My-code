@@ -3,7 +3,7 @@
 import sys
 import random
 
-from PyQt5.QtWidgets import QWidget, QApplication, QLineEdit, QMessageBox,QGridLayout
+from PyQt5.QtWidgets import QWidget, QApplication, QLineEdit, QMessageBox, QGridLayout
 from PyQt5.QtCore import Qt, QEvent
 
 
@@ -111,13 +111,19 @@ class wordle_app(QWidget):
         if len(user_answer) < self.length:
             return  # stop if not all boxes are filled
 
-        # checking the letter in each box
+            # checking the letter if it in the correct position
         for i, box in enumerate(self.grid[self.current_row]):
-            if user_answer[i] in char_answer:
                 if user_answer[i] == char_answer[i]:
                     box.setStyleSheet(self.green())
-                else:
-                    box.setStyleSheet(self.yellow())
+                    char_answer[i] = None
+
+        # checking the letter if it in the word
+        for i, box in enumerate(self.grid[self.current_row]):
+            if char_answer[i] is None:
+                continue
+            if user_answer[i] in char_answer[i]:
+                box.setStyleSheet(self.yellow())
+                char_answer[i] = None
             else:
                 box.setStyleSheet(self.gray())
 
