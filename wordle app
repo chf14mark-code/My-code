@@ -121,7 +121,7 @@ class wordle_app(QWidget):
         for i, box in enumerate(self.grid[self.current_row]):
             if char_answer[i] is None:
                 continue
-            if user_answer[i] in char_answer[i]:
+            if user_answer[i] in char_answer:
                 box.setStyleSheet(self.yellow())
                 char_answer[i] = None
             else:
