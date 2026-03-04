@@ -4,16 +4,17 @@ import sys
 import random
 
 from PyQt5.QtWidgets import QWidget, QApplication, QLineEdit, QMessageBox,QGridLayout
-from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtCore import Qt
 
 
 def import_words():
     try:
         with open("dictionary.txt", "r") as file:
             words = file.read().splitlines()
+            words.remove("# dictionary from nelsonic")
             return words
     except FileNotFoundError:
-        print("Dictionary file not found. Creating new one.")
+        print("Dictionary file not found. Creating a new one.")
 
 word_list = import_words()
 
@@ -35,7 +36,7 @@ class wordle_app(QWidget):
 
     def init_UI(self):
         self.setWindowTitle("Wordle App")  # set the window title
-        self.setFixedSize(70 * self.length, 400)  # prevent the window from being resized
+        self.setFixedSize(70 * self.length, 80*max_rows)  # prevent the window from being resized
 
         layout = QGridLayout()
         self.setLayout(layout)  # set the window layout using a grid layout
@@ -62,16 +63,13 @@ class wordle_app(QWidget):
             self.grid.append(self.row_input)
 
     @staticmethod
-    def gray():  # return the CSS style for the gray color
-        return "background-color: #787c7e;"
-
-    @staticmethod
-    def green():  # return the CSS style for the green color
-        return "background-color: #6aaa64;"
-
-    @staticmethod
-    def yellow():  # return the CSS style for the yellow color
-        return "background-color: #c9b458;"
+    def changeColour(colour):
+        if colour == "green": # return the CSS style for the green color
+            return "background-color: #6aaa64;"
+        elif colour == "gray": # return the CSS style for the gray color
+            return "background-color: #787c7e;"
+        elif colour == "yellow": # return the CSS style for the yellow color
+            return "background-color: #c9b458;"
 
     def move_next_box(self, r, c):
         if len(self.grid[r][c].text()) == 1:
@@ -94,7 +92,7 @@ class wordle_app(QWidget):
         return list(self.answer)  # convert the answer word into a list of characters
 
     def backspace(self):
-        if self.current_column - 1 >= 0:
+        if self.current_column - 1 >= 0: # deleate previous block when backspace is pressed
             self.grid[self.current_row][self.current_column - 1].setFocus()
             self.grid[self.current_row][self.current_column - 1].setText("")
             self.current_column = self.current_column - 1
@@ -114,7 +112,7 @@ class wordle_app(QWidget):
             # checking the letter if it in the correct position
         for i, box in enumerate(self.grid[self.current_row]):
                 if user_answer[i] == char_answer[i]:
-                    box.setStyleSheet(self.green())
+                    box.setStyleSheet(self.changeColour("green"))
                     char_answer[i] = None
 
         # checking the letter if it in the word
@@ -122,10 +120,10 @@ class wordle_app(QWidget):
             if char_answer[i] is None:
                 continue
             if user_answer[i] in char_answer:
-                box.setStyleSheet(self.yellow())
+                box.setStyleSheet(self.changeColour("yellow"))
                 char_answer[i] = None
             else:
-                box.setStyleSheet(self.gray())
+                box.setStyleSheet(self.changeColour("gray"))
 
         # if the user guesses the word correctly, display a winning message
         if user_answer == self.answer:
